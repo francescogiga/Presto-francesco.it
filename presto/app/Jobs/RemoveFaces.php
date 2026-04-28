@@ -11,10 +11,7 @@ use Google\Cloud\Vision\V1\Feature\Type;
 use Google\Cloud\Vision\V1\Image as VisionImage;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Spatie\Image\Enums\AlignPosition;
-use Spatie\Image\Enums\Fit;
-use Spatie\Image\Enums\Unit;
-use Spatie\Image\Image as SpatieImage;
+use Illuminate\Support\Facades\Log;
 
 class RemoveFaces implements ShouldQueue
 {
@@ -61,6 +58,15 @@ class RemoveFaces implements ShouldQueue
 
             $faces = $response[0]->getFaceAnnotations();
 
+            Log::info('RemoveFaces: rilevati ' . count($faces) . ' volti', [
+                'image_id' => $this->article_image_id,
+            ]);
+
+            if (count($faces) === 0) return;
+
+            $img = $this->loadGdImage($srcPath);
+            if (!$img) return;
+
             foreach ($faces as $face) {
                 $vertices = $face->getBoundingPoly()->getVertices();
                 $bounds = [];
@@ -68,26 +74,68 @@ class RemoveFaces implements ShouldQueue
                     $bounds[] = ['x' => $vertex->getX(), 'y' => $vertex->getY()];
                 }
 
-                $width = $bounds[1]['x'] - $bounds[0]['x'];
+                $x      = max(0, $bounds[0]['x']);
+                $y      = max(0, $bounds[0]['y']);
+                $width  = $bounds[1]['x'] - $bounds[0]['x'];
                 $height = $bounds[2]['y'] - $bounds[0]['y'];
 
-                SpatieImage::load($srcPath)
-                    ->watermark(
-                        public_path('images/censura.png'),
-                        AlignPosition::TopLeft,
-                        $bounds[0]['x'],
-                        $bounds[0]['y'],
-                        Unit::Pixel,
-                        $width,
-                        Unit::Pixel,
-                        $height,
-                        Unit::Pixel,
-                        Fit::Stretch
-                    )
-                    ->save($srcPath);
+                $this->pixelateRegion($img, $x, $y, $width, $height, 15);
             }
-        } catch (\Exception) {
-            //
+
+            $this->saveGdImage($img, $srcPath);
+            imagedestroy($img);
+
+        } catch (\Exception $e) {
+            Log::error('RemoveFaces failed: ' . $e->getMessage(), [
+                'image_id' => $this->article_image_id,
+            ]);
         }
+    }
+
+    private function pixelateRegion(\GdImage $img, int $x, int $y, int $w, int $h, int $blockSize): void
+    {
+        $imgW = imagesx($img);
+        $imgH = imagesy($img);
+
+        for ($px = $x; $px < $x + $w; $px += $blockSize) {
+            for ($py = $y; $py < $y + $h; $py += $blockSize) {
+                $sampleX = min($px + intval($blockSize / 2), $imgW - 1);
+                $sampleY = min($py + intval($blockSize / 2), $imgH - 1);
+
+                $color = imagecolorat($img, $sampleX, $sampleY);
+                $r = ($color >> 16) & 0xFF;
+                $g = ($color >> 8) & 0xFF;
+                $b = $color & 0xFF;
+
+                $fill = imagecolorallocate($img, $r, $g, $b);
+                imagefilledrectangle(
+                    $img,
+                    $px, $py,
+                    min($px + $blockSize - 1, $x + $w - 1),
+                    min($py + $blockSize - 1, $y + $h - 1),
+                    $fill
+                );
+            }
+        }
+    }
+
+    private function loadGdImage(string $path): \GdImage|false
+    {
+        return match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => imagecreatefromjpeg($path),
+            'png'         => imagecreatefrompng($path),
+            'webp'        => imagecreatefromwebp($path),
+            default       => false,
+        };
+    }
+
+    private function saveGdImage(\GdImage $img, string $path): void
+    {
+        match (strtolower(pathinfo($path, PATHINFO_EXTENSION))) {
+            'jpg', 'jpeg' => imagejpeg($img, $path, 90),
+            'png'         => imagepng($img, $path),
+            'webp'        => imagewebp($img, $path, 90),
+            default       => imagejpeg($img, $path, 90),
+        };
     }
 }

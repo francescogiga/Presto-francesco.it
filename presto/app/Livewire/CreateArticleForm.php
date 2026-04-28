@@ -71,9 +71,9 @@ class CreateArticleForm extends Component
                     'path' => $image->store($newFileName, 'public'),
                 ]);
 
-                dispatch(new ResizeImage($newImage->path, 300, 300))
+                dispatch(new RemoveFaces($newImage->id))
                     ->withChain([
-                        new RemoveFaces($newImage->id),
+                        new ResizeImage($newImage->path, 300, 300),
                         new GoogleVisionSafeSearch($newImage->id),
                         new GoogleVisionLabelImage($newImage->id),
                     ]);

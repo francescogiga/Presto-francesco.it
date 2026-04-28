@@ -1,5 +1,5 @@
 <div class="card h-100 shadow-sm card-w mx-auto">
-    <img src="{{ $article->images->isNotEmpty() ? \Illuminate\Support\Facades\Storage::url($article->images->first()->path) : 'https://picsum.photos/300/200' }}"
+    <img src="{{ $article->images->isNotEmpty() ? $article->images->first()->getUrl(300, 300) : 'https://picsum.photos/300/200' }}"
          class="card-img-top" style="height:200px;object-fit:cover;" alt="{{ $article->title }}">
     <div class="card-body">
         <span class="badge bg-secondary mb-2">{{ __('ui.' . $article->category->name) }}</span>

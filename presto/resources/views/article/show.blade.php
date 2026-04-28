@@ -7,7 +7,7 @@
                         <div class="carousel-inner">
                             @foreach($article->images as $index => $image)
                                 <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($image->path) }}"
+                                    <img src="{{ $image->getUrl(300, 300) }}"
                                          class="d-block w-100" style="height:400px;object-fit:cover;" alt="{{ $article->title }}">
                                 </div>
                             @endforeach

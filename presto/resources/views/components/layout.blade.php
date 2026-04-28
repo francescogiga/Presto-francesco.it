@@ -8,11 +8,11 @@
     @livewireStyles
 </head>
 <body>
-    @include('components.navbar')
+    <x-navbar />
     <div style="min-height: 70vh">
         {{ $slot }}
     </div>
-    @include('components.footer')
+    <x-footer />
     @livewireScripts
 </body>
 </html>

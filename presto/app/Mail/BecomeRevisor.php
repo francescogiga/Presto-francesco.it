@@ -13,7 +13,7 @@ class BecomeRevisor extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public User $user) {}
+    public function __construct(public User $user, public string $motivation = '') {}
 
     public function envelope(): Envelope
     {

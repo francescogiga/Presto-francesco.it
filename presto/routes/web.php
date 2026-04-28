@@ -17,5 +17,6 @@ Route::get('/category/{category}', [ArticleController::class, 'byCategory'])->na
 Route::get('/revisor', [RevisorController::class, 'index'])->name('revisor.index')->middleware('isRevisor');
 Route::patch('/revisor/{article}/accept', [RevisorController::class, 'accept'])->name('revisor.accept')->middleware('isRevisor');
 Route::patch('/revisor/{article}/reject', [RevisorController::class, 'reject'])->name('revisor.reject')->middleware('isRevisor');
+Route::get('/lavora-con-noi', [RevisorController::class, 'workWithUs'])->name('revisor.work-with-us')->middleware('auth');
 Route::post('/become-revisor', [RevisorController::class, 'becomeRevisor'])->name('revisor.become')->middleware('auth');
 Route::get('/make-revisor/{email}', [RevisorController::class, 'makeRevisor'])->name('make.revisor');

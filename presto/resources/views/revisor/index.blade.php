@@ -17,7 +17,7 @@
                             @foreach($article_to_check->images as $image)
                                 <div class="col-md-4">
                                     <div class="card">
-                                        <img src="{{ \Illuminate\Support\Facades\Storage::url($image->path) }}"
+                                        <img src="{{ $image->getUrl(300, 300) }}"
                                              class="card-img-top" style="height:150px;object-fit:cover;" alt="immagine">
                                         <div class="card-body p-2">
                                             @if($image->labels)
